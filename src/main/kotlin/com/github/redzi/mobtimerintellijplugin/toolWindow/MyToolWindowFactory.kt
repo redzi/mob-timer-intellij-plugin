@@ -11,7 +11,8 @@ import com.intellij.ui.content.ContentFactory
 import com.github.redzi.mobtimerintellijplugin.MyBundle
 import com.github.redzi.mobtimerintellijplugin.services.MyProjectService
 import javax.swing.JButton
-
+import javax.swing.JTextField
+import kotlin.concurrent.timer
 
 class MyToolWindowFactory : ToolWindowFactory {
 
@@ -31,13 +32,30 @@ class MyToolWindowFactory : ToolWindowFactory {
 
         private val service = toolWindow.project.service<MyProjectService>()
 
-        fun getContent() = JBPanel<JBPanel<*>>().apply {
-            val label = JBLabel(MyBundle.message("randomLabel", "?"))
+        private fun toSeconds(input: String): Int {
+            val s = input.split(":")
+            return s[0].toInt() * 60 + s[1].toInt()
+        }
 
+        fun getContent() = JBPanel<JBPanel<*>>().apply {
+            val timeInput = JTextField("05:00")
+            val label = JBLabel(timeInput.getText())
+            var countdown : Int
+
+            add(timeInput)
             add(label)
-            add(JButton(MyBundle.message("shuffle")).apply {
+            add(JButton(MyBundle.message("startButtonLabel")).apply {
                 addActionListener {
-                    label.text = MyBundle.message("randomLabel", service.getRandomNumber())
+                    countdown = toSeconds(timeInput.getText())
+                    timer(initialDelay = 1000L, period = 1000L, daemon = true) {
+                        --countdown
+                        if (countdown < 0) {
+                            label.text = timeInput.getText()
+                            cancel()
+                        } else {
+                            label.text = String.format("%02d:%02d", countdown / 60, countdown % 60)
+                        }
+                    }
                 }
             })
         }
