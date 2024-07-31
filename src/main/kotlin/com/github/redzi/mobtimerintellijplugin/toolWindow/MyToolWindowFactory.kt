@@ -10,9 +10,22 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
 import com.github.redzi.mobtimerintellijplugin.MyBundle
 import com.github.redzi.mobtimerintellijplugin.services.MyProjectService
+import com.intellij.ui.layout.Row
+import com.intellij.util.ui.JBUI.CurrentTheme.Button
+import com.vladsch.flexmark.util.html.ui.Color
+import java.awt.BorderLayout
+import java.util.*
+import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JTextField
+import kotlin.concurrent.schedule
 import kotlin.concurrent.timer
+import kotlin.concurrent.timerTask
+
+// Tomek
+// Arif
+// Patrik
+// Jinha
 
 class MyToolWindowFactory : ToolWindowFactory {
 
@@ -38,26 +51,104 @@ class MyToolWindowFactory : ToolWindowFactory {
         }
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
-            val timeInput = JTextField("05:00")
-            val label = JBLabel(timeInput.getText())
+            val timeHelpLabel = JBLabel("Turn time: ")
+            val timeInput = JTextField("00:03")
+            val timeLabel = JBLabel(timeInput.getText())
             var countdown : Int
+            var currentTurn = 1
 
-            add(timeInput)
-            add(label)
-            add(JButton(MyBundle.message("startButtonLabel")).apply {
+            val numberOfTurns2Label = JBLabel("Number of turns: ")
+            val numberOfTurnsInput = JTextField("2")
+            val numberOfTurnsLabel = JBLabel("Turn: 1")
+            var numberOfTurns = 1
+
+
+            var ourTimer = Timer()
+            val startButton = JButton(MyBundle.message("startButtonLabel")).apply {
                 addActionListener {
                     countdown = toSeconds(timeInput.getText())
-                    timer(initialDelay = 1000L, period = 1000L, daemon = true) {
-                        --countdown
-                        if (countdown < 0) {
-                            label.text = timeInput.getText()
-                            cancel()
-                        } else {
-                            label.text = String.format("%02d:%02d", countdown / 60, countdown % 60)
+                    numberOfTurns = numberOfTurnsInput.getText().toInt()
+
+                    ourTimer.schedule(object : TimerTask() {
+                        override fun run() {
+                            --countdown
+                            if (countdown < 0) {
+                                currentTurn++
+                                if (currentTurn > numberOfTurns) {
+                                    currentTurn = 1
+                                    countdown = toSeconds(timeInput.getText())
+                                    cancel()
+                                } else {
+                                    countdown = toSeconds(timeInput.getText())
+                                }
+
+                                timeLabel.text = timeInput.getText()
+                                numberOfTurnsLabel.text = "Turn: $currentTurn"
+                            } else {
+                                timeLabel.text = String.format("%02d:%02d", countdown / 60, countdown % 60)
+                            }
                         }
+                    }, 1000L, 1000L)
+                }
+            }
+
+            var pauseButton = JButton("Pause")
+            pauseButton.apply {
+                addActionListener {
+                    if (pauseButton.text == "Pause") {
+                        pauseButton.text = "Resume"
+                        ourTimer.cancel()
+                    } else {
+                        pauseButton.text = "Pause"
+                        countdown = toSeconds(timeInput.getText())
+                        numberOfTurns = numberOfTurnsInput.getText().toInt()
+                        ourTimer = Timer()
+                        ourTimer.schedule(object : TimerTask() {
+                            override fun run() {
+                                --countdown
+                                if (countdown < 0) {
+                                    currentTurn++
+                                    if (currentTurn > numberOfTurns) {
+                                        currentTurn = 1
+                                        countdown = toSeconds(timeInput.getText())
+                                        cancel()
+                                    } else {
+                                        countdown = toSeconds(timeInput.getText())
+                                    }
+
+                                    timeLabel.text = timeInput.getText()
+                                    numberOfTurnsLabel.text = "Turn: $currentTurn"
+                                } else {
+                                    timeLabel.text = String.format("%02d:%02d", countdown / 60, countdown % 60)
+                                }
+                            }
+                        }, 1000L, 1000L)
                     }
                 }
-            })
+            }
+
+            var bigBox = Box.createVerticalBox()
+            var timeBox = Box.createHorizontalBox()
+            timeBox.add(timeHelpLabel)
+            timeBox.add(timeInput)
+
+            var turnBox = Box.createHorizontalBox()
+            turnBox.add(numberOfTurns2Label)
+            turnBox.add(numberOfTurnsInput)
+            
+            var buttonBox = Box.createVerticalBox()
+
+            buttonBox.add(numberOfTurnsLabel)
+            buttonBox.add(timeLabel)
+            buttonBox.add(startButton)
+            buttonBox.add(pauseButton)
+
+            bigBox.add(timeBox)
+            bigBox.add(Box.createVerticalStrut(50))
+            bigBox.add(turnBox)
+            bigBox.add(buttonBox)
+
+            add(bigBox)
         }
     }
 }
