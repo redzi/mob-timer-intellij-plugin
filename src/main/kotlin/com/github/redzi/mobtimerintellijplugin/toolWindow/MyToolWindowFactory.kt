@@ -10,22 +10,21 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
 import com.github.redzi.mobtimerintellijplugin.MyBundle
 import com.github.redzi.mobtimerintellijplugin.services.MyProjectService
-import com.intellij.ui.layout.Row
-import com.intellij.util.ui.JBUI.CurrentTheme.Button
-import com.vladsch.flexmark.util.html.ui.Color
-import java.awt.BorderLayout
+import com.intellij.openapi.ui.popup.JBPopupFactory
 import java.util.*
 import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JTextField
-import kotlin.concurrent.schedule
-import kotlin.concurrent.timer
-import kotlin.concurrent.timerTask
+import javax.swing.ListSelectionModel
 
-// Tomek
 // Arif
-// Patrik
 // Jinha
+// Patrik
+
+
+private const val START_RIGHT_AWAY = "Start Right Away"
+private const val PAUSE = "Pause"
+private const val SKIP = "Skip"
 
 class MyToolWindowFactory : ToolWindowFactory {
 
@@ -62,10 +61,46 @@ class MyToolWindowFactory : ToolWindowFactory {
             val numberOfTurnsLabel = JBLabel("Turn: 1")
             var numberOfTurns = 1
 
+            val arr = ArrayList<String>()
+            arr.add(START_RIGHT_AWAY)
+            arr.add(PAUSE)
+            arr.add(SKIP)
 
+            val startButton = JButton(MyBundle.message("startButtonLabel"))
+            var pauseButton = JButton(PAUSE)
+            val popupBuilder = JBPopupFactory.getInstance().createPopupChooserBuilder(arr)
+                .setTitle("Next Turn")
+                .setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
+                .setCancelOnOtherWindowOpen(false)
+                .setCancelOnClickOutside(false)
+                .setCancelKeyEnabled(false)
+                .setCancelOnWindowDeactivation(false)
+                .setItemChosenCallback { value ->
+                    if (value == START_RIGHT_AWAY) {
+                        startButton.doClick()
+                    } else if (value == PAUSE) {
+                        pauseButton.doClick()
+                    } else { // Skip
+                        currentTurn++
+                    }
+                }
+            var popup = popupBuilder.createPopup()
+
+            var bigBox = Box.createVerticalBox()
+            var buttonBox = Box.createVerticalBox()
             var ourTimer = Timer()
-            val startButton = JButton(MyBundle.message("startButtonLabel")).apply {
+
+            startButton.apply {
                 addActionListener {
+                    if (!popup.isVisible) {
+                        if(popup.canShow()) {
+                            popup.show(buttonBox)
+                        }
+                        else {
+                            popup = popupBuilder.createPopup()
+                            popup.show(buttonBox)
+                        }
+                    }
                     countdown = toSeconds(timeInput.getText())
                     numberOfTurns = numberOfTurnsInput.getText().toInt()
 
@@ -92,14 +127,13 @@ class MyToolWindowFactory : ToolWindowFactory {
                 }
             }
 
-            var pauseButton = JButton("Pause")
             pauseButton.apply {
                 addActionListener {
-                    if (pauseButton.text == "Pause") {
+                    if (pauseButton.text == PAUSE) {
                         pauseButton.text = "Resume"
                         ourTimer.cancel()
                     } else {
-                        pauseButton.text = "Pause"
+                        pauseButton.text = PAUSE
                         countdown = toSeconds(timeInput.getText())
                         numberOfTurns = numberOfTurnsInput.getText().toInt()
                         ourTimer = Timer()
@@ -127,7 +161,6 @@ class MyToolWindowFactory : ToolWindowFactory {
                 }
             }
 
-            var bigBox = Box.createVerticalBox()
             var timeBox = Box.createHorizontalBox()
             timeBox.add(timeHelpLabel)
             timeBox.add(timeInput)
@@ -136,8 +169,6 @@ class MyToolWindowFactory : ToolWindowFactory {
             turnBox.add(numberOfTurns2Label)
             turnBox.add(numberOfTurnsInput)
             
-            var buttonBox = Box.createVerticalBox()
-
             buttonBox.add(numberOfTurnsLabel)
             buttonBox.add(timeLabel)
             buttonBox.add(startButton)
