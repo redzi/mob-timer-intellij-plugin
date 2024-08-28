@@ -4,14 +4,15 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.github.redzi.mobtimerintellijplugin.MyBundle
+import com.github.redzi.mobtimerintellijplugin.model.MobTimerModel
+import com.github.redzi.mobtimerintellijplugin.model.TimeSource
 
 @Service(Service.Level.PROJECT)
-class MyProjectService(project: Project) {
+class MyProjectService {
 
-    init {
-        thisLogger().info(MyBundle.message("projectService", project.name))
-        thisLogger().warn("Don't forget to remove all non-needed sample code files with their corresponding registration entries in `plugin.xml`.")
-    }
+    val model = MobTimerModel()
+
+    private val timeSource = TimeSource(listener = { time -> model.onTimer(time) }).start()
 
     fun getRandomNumber() = (1..100).random()
 }

@@ -9,18 +9,15 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
 import com.github.redzi.mobtimerintellijplugin.MyBundle
+import com.github.redzi.mobtimerintellijplugin.model.MobTimerModel
 import com.github.redzi.mobtimerintellijplugin.services.MyProjectService
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import java.util.*
 import javax.swing.Box
 import javax.swing.JButton
 import javax.swing.JTextField
 import javax.swing.ListSelectionModel
-
-// Arif
-// Jinha
-// Patrik
-
 
 private const val START_RIGHT_AWAY = "Start Right Away"
 private const val PAUSE = "Pause"
@@ -41,19 +38,40 @@ class MyToolWindowFactory : ToolWindowFactory {
     override fun shouldBeAvailable(project: Project) = true
 
     class MyToolWindow(toolWindow: ToolWindow) {
-
         private val service = toolWindow.project.service<MyProjectService>()
+        val timeHelpLabel = JBLabel("Turn time: ")
+
+        init {
+            service.model.addListener(this, object : MobTimerModel.Listener {
+                override fun onStateChange() {
+                    ApplicationManager.getApplication().invokeLater {
+                        // TODO update UI here
+                       timeHelpLabel.text = "we were here"
+                    }
+                }
+            })
+        }
+
 
         private fun toSeconds(input: String): Int {
             val s = input.split(":")
             return s[0].toInt() * 60 + s[1].toInt()
         }
 
+//        var stopwatch = Stopwatch.createUnstarted();
+//        stopwatch.Tick(func (time) {
+//            // change labels
+//        })
+//
+//        btn click => pause, start
+
+
         fun getContent() = JBPanel<JBPanel<*>>().apply {
-            val timeHelpLabel = JBLabel("Turn time: ")
+
+
             val timeInput = JTextField("00:03")
             val timeLabel = JBLabel(timeInput.getText())
-            var countdown : Int
+            var countdown: Int
             var currentTurn = 1
 
             val numberOfTurns2Label = JBLabel("Number of turns: ")
@@ -90,15 +108,15 @@ class MyToolWindowFactory : ToolWindowFactory {
             var buttonBox = Box.createVerticalBox()
             var ourTimer = Timer()
 
+
             startButton.apply {
                 addActionListener {
                     if (!popup.isVisible) {
-                        if(popup.canShow()) {
-                            popup.show(buttonBox)
-                        }
-                        else {
+                        if (popup.canShow()) {
+                            popup.showInFocusCenter()
+                        } else {
                             popup = popupBuilder.createPopup()
-                            popup.show(buttonBox)
+                            popup.showInFocusCenter()
                         }
                     }
                     countdown = toSeconds(timeInput.getText())
@@ -168,7 +186,7 @@ class MyToolWindowFactory : ToolWindowFactory {
             var turnBox = Box.createHorizontalBox()
             turnBox.add(numberOfTurns2Label)
             turnBox.add(numberOfTurnsInput)
-            
+
             buttonBox.add(numberOfTurnsLabel)
             buttonBox.add(timeLabel)
             buttonBox.add(startButton)
