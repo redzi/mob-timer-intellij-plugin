@@ -22,7 +22,11 @@ import javax.swing.ListSelectionModel
 private const val START_RIGHT_AWAY = "Start Right Away"
 private const val PAUSE = "Pause"
 private const val SKIP = "Skip"
+private const val START = "Start"
 
+// Jinha
+// Arif
+// Patrik
 class MyToolWindowFactory : ToolWindowFactory {
 
     init {
@@ -40,144 +44,89 @@ class MyToolWindowFactory : ToolWindowFactory {
     class MyToolWindow(toolWindow: ToolWindow) {
         private val service = toolWindow.project.service<MyProjectService>()
         val timeHelpLabel = JBLabel("Turn time: ")
+        val numberOfTurnsLabel = JBLabel("Turn: 1")
+        val timeInput = JTextField("00:03")
+        val timeLabel = JBLabel(timeInput.getText())
+        val startButton = JButton(START)
+        var pauseButton = JButton(PAUSE)
+        val numberOfTurns2Label = JBLabel("Number of turns: ")
+        val numberOfTurnsInput = JTextField("2")
+        var bigBox = Box.createVerticalBox()
+        var buttonBox = Box.createVerticalBox()
+
+        private fun updateUi(model: MobTimerModel) {
+            numberOfTurnsLabel.text = "Turn: " + model.currentTurn
+            timeLabel.text = model.getDisplayTime()
+        }
 
         init {
-            service.model.addListener(this, object : MobTimerModel.Listener {
-                override fun onStateChange() {
+             service.model.addListener(this, object : MobTimerModel.Listener {
+                override fun onStateChange(mobTimerModel: MobTimerModel) {
                     ApplicationManager.getApplication().invokeLater {
-                        // TODO update UI here
-                       timeHelpLabel.text = "we were here"
+                        updateUi(mobTimerModel)
                     }
                 }
-            })
+                 override fun onTurnEnded(mobTimerModel: MobTimerModel) {
+                     service.model.pause()
+                     val arr = ArrayList<String>()
+                     arr.add(START_RIGHT_AWAY)
+                     arr.add(PAUSE)
+                     arr.add(SKIP)
+
+                     val popupBuilder = JBPopupFactory.getInstance().createPopupChooserBuilder(arr)
+                             .setTitle("Next Turn")
+                             .setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
+                             .setCancelOnOtherWindowOpen(false)
+                             .setCancelOnClickOutside(false)
+                             .setCancelKeyEnabled(false)
+                             .setCancelOnWindowDeactivation(false)
+                             .setItemChosenCallback { value ->
+                                 if (value == START_RIGHT_AWAY) {
+                                     service.model.start()
+                                 } else if (value == PAUSE) {
+                                     // pause the break, not the session
+                                 } else { // Skip
+//                                     currentTurn++
+                                 }
+                             }
+                     var popup = popupBuilder.createPopup()
+
+                     if (!popup.isVisible) {
+                         if (popup.canShow()) {
+                             popup.showInFocusCenter()
+                         } else {
+                             popup = popupBuilder.createPopup()
+                             popup.showInFocusCenter()
+                         }
+                     }
+                 }
+             })
         }
-
-
-        private fun toSeconds(input: String): Int {
-            val s = input.split(":")
-            return s[0].toInt() * 60 + s[1].toInt()
-        }
-
-//        var stopwatch = Stopwatch.createUnstarted();
-//        stopwatch.Tick(func (time) {
-//            // change labels
-//        })
-//
-//        btn click => pause, start
-
 
         fun getContent() = JBPanel<JBPanel<*>>().apply {
-
-
-            val timeInput = JTextField("00:03")
-            val timeLabel = JBLabel(timeInput.getText())
-            var countdown: Int
-            var currentTurn = 1
-
-            val numberOfTurns2Label = JBLabel("Number of turns: ")
-            val numberOfTurnsInput = JTextField("2")
-            val numberOfTurnsLabel = JBLabel("Turn: 1")
-            var numberOfTurns = 1
-
-            val arr = ArrayList<String>()
-            arr.add(START_RIGHT_AWAY)
-            arr.add(PAUSE)
-            arr.add(SKIP)
-
-            val startButton = JButton(MyBundle.message("startButtonLabel"))
-            var pauseButton = JButton(PAUSE)
-            val popupBuilder = JBPopupFactory.getInstance().createPopupChooserBuilder(arr)
-                .setTitle("Next Turn")
-                .setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
-                .setCancelOnOtherWindowOpen(false)
-                .setCancelOnClickOutside(false)
-                .setCancelKeyEnabled(false)
-                .setCancelOnWindowDeactivation(false)
-                .setItemChosenCallback { value ->
-                    if (value == START_RIGHT_AWAY) {
-                        startButton.doClick()
-                    } else if (value == PAUSE) {
-                        pauseButton.doClick()
-                    } else { // Skip
-                        currentTurn++
-                    }
-                }
-            var popup = popupBuilder.createPopup()
-
-            var bigBox = Box.createVerticalBox()
-            var buttonBox = Box.createVerticalBox()
-            var ourTimer = Timer()
-
-
             startButton.apply {
                 addActionListener {
-                    if (!popup.isVisible) {
-                        if (popup.canShow()) {
-                            popup.showInFocusCenter()
-                        } else {
-                            popup = popupBuilder.createPopup()
-                            popup.showInFocusCenter()
-                        }
-                    }
-                    countdown = toSeconds(timeInput.getText())
-                    numberOfTurns = numberOfTurnsInput.getText().toInt()
-
-                    ourTimer.schedule(object : TimerTask() {
-                        override fun run() {
-                            --countdown
-                            if (countdown < 0) {
-                                currentTurn++
-                                if (currentTurn > numberOfTurns) {
-                                    currentTurn = 1
-                                    countdown = toSeconds(timeInput.getText())
-                                    cancel()
-                                } else {
-                                    countdown = toSeconds(timeInput.getText())
-                                }
-
-                                timeLabel.text = timeInput.getText()
-                                numberOfTurnsLabel.text = "Turn: $currentTurn"
-                            } else {
-                                timeLabel.text = String.format("%02d:%02d", countdown / 60, countdown % 60)
-                            }
-                        }
-                    }, 1000L, 1000L)
+                    service.model.setTimeInput(timeInput.getText())
+                    service.model.setNumberOfTurns(numberOfTurnsInput.getText().toInt())
+                    service.model.start()
+                    startButton.isEnabled = false
                 }
             }
 
             pauseButton.apply {
                 addActionListener {
                     if (pauseButton.text == PAUSE) {
+                        // paused
                         pauseButton.text = "Resume"
-                        ourTimer.cancel()
+                        service.model.pause()
                     } else {
                         pauseButton.text = PAUSE
-                        countdown = toSeconds(timeInput.getText())
-                        numberOfTurns = numberOfTurnsInput.getText().toInt()
-                        ourTimer = Timer()
-                        ourTimer.schedule(object : TimerTask() {
-                            override fun run() {
-                                --countdown
-                                if (countdown < 0) {
-                                    currentTurn++
-                                    if (currentTurn > numberOfTurns) {
-                                        currentTurn = 1
-                                        countdown = toSeconds(timeInput.getText())
-                                        cancel()
-                                    } else {
-                                        countdown = toSeconds(timeInput.getText())
-                                    }
-
-                                    timeLabel.text = timeInput.getText()
-                                    numberOfTurnsLabel.text = "Turn: $currentTurn"
-                                } else {
-                                    timeLabel.text = String.format("%02d:%02d", countdown / 60, countdown % 60)
-                                }
-                            }
-                        }, 1000L, 1000L)
+                        service.model.start()
                     }
                 }
             }
+
+            // TODO: stop the sesson button
 
             var timeBox = Box.createHorizontalBox()
             timeBox.add(timeHelpLabel)
