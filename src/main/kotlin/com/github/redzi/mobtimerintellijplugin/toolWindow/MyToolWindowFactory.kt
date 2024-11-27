@@ -50,9 +50,11 @@ class MyToolWindowFactory : ToolWindowFactory {
         private val service = toolWindow.project.service<MyProjectService>()
         val timeHelpLabel = JBLabel("Turn time: ")
         val breakHelpLabel = JBLabel("Break time: ")
+        val sessionBreakHelpLabel = JBLabel("Session break time: ")
         val numberOfTurnsLabel = JBLabel("Turn: 1")
         val timeInput = JTextField("00:03")
         val breakInput = JTextField("00:03")
+        val sessionBreakInput = JTextField("00:10")
         val timeLabel = JBLabel(timeInput.getText())
         val startButton = JButton(START)
         var pauseButton = JButton(PAUSE)
@@ -130,7 +132,7 @@ class MyToolWindowFactory : ToolWindowFactory {
         fun getContent() = JBPanel<JBPanel<*>>().apply {
             startButton.apply {
                 addActionListener {
-                    service.model.setTimeInput(timeInput.getText(), breakInput.getText())
+                    service.model.setTimeInput(timeInput.getText(), breakInput.getText(), sessionBreakInput.getText())
                     service.model.setNumberOfTurns(numberOfTurnsInput.getText().toInt())
                     service.model.start()
                     startButton.isEnabled = false
@@ -164,6 +166,8 @@ class MyToolWindowFactory : ToolWindowFactory {
             timeBox.add(timeInput)
             timeBox.add(breakHelpLabel)
             timeBox.add(breakInput)
+            timeBox.add(sessionBreakHelpLabel)
+            timeBox.add(sessionBreakInput)
 
             var turnBox = Box.createHorizontalBox()
             turnBox.add(numberOfTurns2Label)
