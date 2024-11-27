@@ -8,13 +8,16 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
-import com.github.redzi.mobtimerintellijplugin.MyBundle
 import com.github.redzi.mobtimerintellijplugin.model.MobTimerModel
 import com.github.redzi.mobtimerintellijplugin.services.MyProjectService
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.ui.components.JBList
+import com.intellij.ui.components.JBTextField
 import java.util.*
 import javax.swing.Box
+import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JTextField
 import javax.swing.ListSelectionModel
@@ -27,6 +30,8 @@ private const val START = "Start"
 // Jinha
 // Arif
 // Patrik
+// Tomek
+
 class MyToolWindowFactory : ToolWindowFactory {
 
     init {
@@ -53,20 +58,36 @@ class MyToolWindowFactory : ToolWindowFactory {
         val numberOfTurnsInput = JTextField("2")
         var bigBox = Box.createVerticalBox()
         var buttonBox = Box.createVerticalBox()
+        var list = DefaultListModel<String>()
+        var participantsList = JBList<String>()
+        var addParticipantInput = JBTextField()
+        val addParticipantButton = JButton("Add")
+        var breakCountdownLabel = JBLabel("")
+        lateinit var popup : JBPopup
 
         private fun updateUi(model: MobTimerModel) {
             numberOfTurnsLabel.text = "Turn: " + model.currentTurn
+            participantsList.setSelectedIndex(model.currentTurn-1)
             timeLabel.text = model.getDisplayTime()
+            if (model.popup) {
+                if (model.breakCountdown == 0) {
+                    popup.cancel()
+                }
+                breakCountdownLabel.text = model.breakCountdown.toString()
+            }
         }
 
         init {
+            participantsList = JBList(list)
+
              service.model.addListener(this, object : MobTimerModel.Listener {
-                override fun onStateChange(mobTimerModel: MobTimerModel) {
+                 override fun onStateChange(mobTimerModel: MobTimerModel) {
                     ApplicationManager.getApplication().invokeLater {
                         updateUi(mobTimerModel)
                     }
-                }
+                 }
                  override fun onTurnEnded(mobTimerModel: MobTimerModel) {
+                     service.model.popup = true
                      service.model.pause()
                      val arr = ArrayList<String>()
                      arr.add(START_RIGHT_AWAY)
@@ -81,6 +102,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                              .setCancelKeyEnabled(false)
                              .setCancelOnWindowDeactivation(false)
                              .setItemChosenCallback { value ->
+                                 service.model.popup = false
                                  if (value == START_RIGHT_AWAY) {
                                      service.model.start()
                                  } else if (value == PAUSE) {
@@ -89,8 +111,8 @@ class MyToolWindowFactory : ToolWindowFactory {
 //                                     currentTurn++
                                  }
                              }
-                     var popup = popupBuilder.createPopup()
 
+                     popup = popupBuilder.createPopup()
                      if (!popup.isVisible) {
                          if (popup.canShow()) {
                              popup.showInFocusCenter()
@@ -126,6 +148,13 @@ class MyToolWindowFactory : ToolWindowFactory {
                 }
             }
 
+            addParticipantButton.apply {
+                addActionListener {
+                    list.addElement(addParticipantInput.text)
+                    addParticipantInput.text = ""
+                }
+            }
+
             // TODO: stop the sesson button
 
             var timeBox = Box.createHorizontalBox()
@@ -145,6 +174,12 @@ class MyToolWindowFactory : ToolWindowFactory {
             bigBox.add(Box.createVerticalStrut(50))
             bigBox.add(turnBox)
             bigBox.add(buttonBox)
+
+            bigBox.add(addParticipantInput)
+            bigBox.add(addParticipantButton)
+            bigBox.add(participantsList)
+
+            bigBox.add(breakCountdownLabel)
 
             add(bigBox)
         }

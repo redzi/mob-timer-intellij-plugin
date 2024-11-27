@@ -3,26 +3,32 @@ package com.github.redzi.mobtimerintellijplugin.model
 class MobTimerModel {
 
     private var countdown: Int = 0
+    var breakCountdown: Int = 0
     var currentTurn: Int = 1
     private var numberOfTurns: Int = 0
     private var timeInput: Int = 0
 
     private var paused: Boolean = true
+    var popup: Boolean = false
 
     fun onTimer(time: Time) {
-        if (paused) {
-            return
-        }
-
-        --countdown
-        if (countdown < 0) {
-            currentTurn++
-            listeners.values.forEach { it.onTurnEnded(this) }
-            if (currentTurn > numberOfTurns) {
-                currentTurn = 1
-                paused = true
+        if (popup) {
+            --breakCountdown
+            if (breakCountdown < 0) {
+                start()
+                breakCountdown = 3
             }
-            countdown = timeInput
+        }
+        if (!paused) {
+            --countdown
+            if (countdown < 0) {
+                currentTurn++
+                listeners.values.forEach { it.onTurnEnded(this) }
+                if (currentTurn > numberOfTurns) {
+                    currentTurn = 1
+                }
+                countdown = timeInput
+            }
         }
 
         listeners.values.forEach { it.onStateChange(this) }
@@ -47,6 +53,7 @@ class MobTimerModel {
     fun setTimeInput(timeInput: String) {
         this.timeInput = toSeconds(timeInput)
         this.countdown = toSeconds(timeInput)
+        this.breakCountdown = 3
     }
 
     fun setNumberOfTurns(turns: Int) {
@@ -59,6 +66,7 @@ class MobTimerModel {
 
     fun start() {
         paused = false
+        popup = false
     }
 
     fun pause() {
