@@ -27,7 +27,7 @@ private const val PAUSE = "Pause"
 private const val SKIP = "Skip"
 private const val START = "Start"
 
-// Jinha
+
 // Arif
 // Patrik
 // Tomek
@@ -49,8 +49,10 @@ class MyToolWindowFactory : ToolWindowFactory {
     class MyToolWindow(toolWindow: ToolWindow) {
         private val service = toolWindow.project.service<MyProjectService>()
         val timeHelpLabel = JBLabel("Turn time: ")
+        val breakHelpLabel = JBLabel("Break time: ")
         val numberOfTurnsLabel = JBLabel("Turn: 1")
         val timeInput = JTextField("00:03")
+        val breakInput = JTextField("00:03")
         val timeLabel = JBLabel(timeInput.getText())
         val startButton = JButton(START)
         var pauseButton = JButton(PAUSE)
@@ -62,7 +64,7 @@ class MyToolWindowFactory : ToolWindowFactory {
         var participantsList = JBList<String>()
         var addParticipantInput = JBTextField()
         val addParticipantButton = JButton("Add")
-        var breakCountdownLabel = JBLabel("")
+        var breakCountdownLabel = JBLabel("00:03")
         lateinit var popup : JBPopup
 
         private fun updateUi(model: MobTimerModel) {
@@ -128,7 +130,7 @@ class MyToolWindowFactory : ToolWindowFactory {
         fun getContent() = JBPanel<JBPanel<*>>().apply {
             startButton.apply {
                 addActionListener {
-                    service.model.setTimeInput(timeInput.getText())
+                    service.model.setTimeInput(timeInput.getText(), breakInput.getText())
                     service.model.setNumberOfTurns(numberOfTurnsInput.getText().toInt())
                     service.model.start()
                     startButton.isEnabled = false
@@ -160,6 +162,8 @@ class MyToolWindowFactory : ToolWindowFactory {
             var timeBox = Box.createHorizontalBox()
             timeBox.add(timeHelpLabel)
             timeBox.add(timeInput)
+            timeBox.add(breakHelpLabel)
+            timeBox.add(breakInput)
 
             var turnBox = Box.createHorizontalBox()
             turnBox.add(numberOfTurns2Label)
@@ -167,6 +171,7 @@ class MyToolWindowFactory : ToolWindowFactory {
 
             buttonBox.add(numberOfTurnsLabel)
             buttonBox.add(timeLabel)
+            buttonBox.add(breakCountdownLabel)
             buttonBox.add(startButton)
             buttonBox.add(pauseButton)
 
@@ -178,8 +183,6 @@ class MyToolWindowFactory : ToolWindowFactory {
             bigBox.add(addParticipantInput)
             bigBox.add(addParticipantButton)
             bigBox.add(participantsList)
-
-            bigBox.add(breakCountdownLabel)
 
             add(bigBox)
         }

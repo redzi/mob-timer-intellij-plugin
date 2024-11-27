@@ -4,6 +4,7 @@ class MobTimerModel {
 
     private var countdown: Int = 0
     var breakCountdown: Int = 0
+    var breakTime: Int = 0
     var currentTurn: Int = 1
     private var numberOfTurns: Int = 0
     private var timeInput: Int = 0
@@ -16,7 +17,7 @@ class MobTimerModel {
             --breakCountdown
             if (breakCountdown < 0) {
                 start()
-                breakCountdown = 3
+                breakCountdown = this.breakTime
             }
         }
         if (!paused) {
@@ -50,10 +51,11 @@ class MobTimerModel {
         return s[0].toInt() * 60 + s[1].toInt()
     }
 
-    fun setTimeInput(timeInput: String) {
+    fun setTimeInput(timeInput: String, breakInput: String) {
         this.timeInput = toSeconds(timeInput)
         this.countdown = toSeconds(timeInput)
-        this.breakCountdown = 3
+        this.breakTime = toSeconds(breakInput)
+        this.breakCountdown = this.breakTime
     }
 
     fun setNumberOfTurns(turns: Int) {
