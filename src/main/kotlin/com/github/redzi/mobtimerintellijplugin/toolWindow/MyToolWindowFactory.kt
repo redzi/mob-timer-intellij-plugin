@@ -19,6 +19,7 @@ import java.util.*
 import javax.swing.Box
 import javax.swing.DefaultListModel
 import javax.swing.JButton
+import javax.swing.JComponent
 import javax.swing.JTextField
 import javax.swing.ListSelectionModel
 
@@ -73,7 +74,7 @@ class MyToolWindowFactory : ToolWindowFactory {
 
         private fun updateUi(model: MobTimerModel) {
             numberOfTurnsLabel.text = "Turn: " + model.currentTurn
-            participantsList.setSelectedIndex(model.currentTurn-1)
+            participantsList.setSelectedIndex((model.currentTurn - 1) % model.numberOfTurns)
             timeLabel.text = model.getDisplayTime()
             if (model.popup) {
                 if (model.breakCountdown == 0) {
@@ -88,9 +89,9 @@ class MyToolWindowFactory : ToolWindowFactory {
 
              service.model.addListener(this, object : MobTimerModel.Listener {
                  override fun onStateChange(mobTimerModel: MobTimerModel) {
-                    ApplicationManager.getApplication().invokeLater {
+//                    ApplicationManager.getApplication().invokeLater {
                         updateUi(mobTimerModel)
-                    }
+//                    }
                  }
                  override fun onTurnEnded(mobTimerModel: MobTimerModel) {
                      service.model.popup = true
@@ -100,6 +101,27 @@ class MyToolWindowFactory : ToolWindowFactory {
                      arr.add(PAUSE)
                      arr.add(SKIP)
 
+
+                     var popupBox = Box.createVerticalBox()
+                     var nextDriverLabel = JBLabel("Next driver: ")
+                     var nextDriverName = JBLabel(participantsList.selectedValue)
+                     popupBox.add(nextDriverLabel)
+                     popupBox.add(nextDriverName)
+
+                     var timeBox = Box.createHorizontalBox()
+                     var timeLabel = JBLabel("Next turn starts in: ")
+                     timeBox.add(timeLabel)
+                     timeBox.add(breakCountdownLabel)
+                     popupBox.add(timeBox)
+
+                     var popupButtonBox = Box.createHorizontalBox()
+                     popupButtonBox.add(startButton)   // not the start button that we want
+                     popupButtonBox.add(pauseButton)
+
+                     popupBox.add(popupButtonBox)
+//                     popupButtonBox.add(pauseButton)
+
+                     val componentPopup = JBPopupFactory.getInstance().createComponentPopupBuilder(popupBox, popupBox)
                      val popupBuilder = JBPopupFactory.getInstance().createPopupChooserBuilder(arr)
                              .setTitle("Next Turn")
                              .setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
@@ -118,7 +140,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                                  }
                              }
 
-                     popup = popupBuilder.createPopup()
+                     popup = componentPopup.createPopup()
                      if (!popup.isVisible) {
                          if (popup.canShow()) {
                              popup.showInFocusCenter()
@@ -135,12 +157,14 @@ class MyToolWindowFactory : ToolWindowFactory {
             startButton.apply {
                 addActionListener {
                     service.model.setTimeInput(timeInput.getText(), breakInput.getText(), sessionBreakInput.getText())
-                    service.model.setNumberOfTurns(numberOfTurnsInput.getText().toInt())
+                    service.model.numberOfTurns = numberOfTurnsInput.getText().toInt()
                     service.model.start()
                     startButton.isEnabled = false
+                    pauseButton.isEnabled = true
                 }
             }
 
+            pauseButton.isEnabled = false
             pauseButton.apply {
                 addActionListener {
                     if (pauseButton.text == PAUSE) {

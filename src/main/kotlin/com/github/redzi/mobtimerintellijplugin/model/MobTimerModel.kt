@@ -7,7 +7,7 @@ class MobTimerModel {
     var breakTime: Int = 0
     var sessionBreakTime: Int = 0
     var currentTurn: Int = 1
-    private var numberOfTurns: Int = 0
+    var numberOfTurns: Int = 0
     private var timeInput: Int = 0
 
     private var paused: Boolean = true
@@ -26,7 +26,10 @@ class MobTimerModel {
             --countdown
             if (countdown < 0) {
                 currentTurn++
-                listeners.values.forEach { it.onTurnEnded(this) }
+                listeners.values.forEach {
+                    it.onStateChange(this)
+                    it.onTurnEnded(this)
+                }
                 if (currentTurn > numberOfTurns) {
                     // session break
                     currentTurn = 1
@@ -61,10 +64,6 @@ class MobTimerModel {
         this.breakTime = toSeconds(breakInput)
         this.sessionBreakTime = toSeconds(sessionBreakInput)
         this.breakCountdown = this.breakTime
-    }
-
-    fun setNumberOfTurns(turns: Int) {
-        numberOfTurns = turns
     }
 
     fun getDisplayTime(): String {
