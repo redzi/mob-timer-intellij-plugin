@@ -76,7 +76,7 @@ class MobTimerModel {
         popup = false
     }
 
-    fun pause() {
+    fun pauseAndStop() {
         paused = true
     }
 }

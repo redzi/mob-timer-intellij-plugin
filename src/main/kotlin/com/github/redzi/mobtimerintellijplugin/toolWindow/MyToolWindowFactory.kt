@@ -26,6 +26,7 @@ private const val START_RIGHT_AWAY = "Start Right Away"
 private const val PAUSE = "Pause"
 private const val SKIP = "Skip"
 private const val START = "Start"
+private const val STOP = "Stop"
 
 
 // Arif
@@ -58,6 +59,7 @@ class MyToolWindowFactory : ToolWindowFactory {
         val timeLabel = JBLabel(timeInput.getText())
         val startButton = JButton(START)
         var pauseButton = JButton(PAUSE)
+        var stopButton = JButton(STOP)
         val numberOfTurns2Label = JBLabel("Number of turns: ")
         val numberOfTurnsInput = JTextField("2")
         var bigBox = Box.createVerticalBox()
@@ -92,7 +94,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                  }
                  override fun onTurnEnded(mobTimerModel: MobTimerModel) {
                      service.model.popup = true
-                     service.model.pause()
+                     service.model.pauseAndStop()
                      val arr = ArrayList<String>()
                      arr.add(START_RIGHT_AWAY)
                      arr.add(PAUSE)
@@ -144,11 +146,20 @@ class MyToolWindowFactory : ToolWindowFactory {
                     if (pauseButton.text == PAUSE) {
                         // paused
                         pauseButton.text = "Resume"
-                        service.model.pause()
+                        service.model.pauseAndStop()
                     } else {
                         pauseButton.text = PAUSE
                         service.model.start()
                     }
+                }
+            }
+
+            stopButton.apply {
+                addActionListener {
+                    startButton.isEnabled = true
+                    pauseButton.text = PAUSE
+                    pauseButton.isEnabled = false
+                    service.model.pauseAndStop()
                 }
             }
 
@@ -178,6 +189,7 @@ class MyToolWindowFactory : ToolWindowFactory {
             buttonBox.add(breakCountdownLabel)
             buttonBox.add(startButton)
             buttonBox.add(pauseButton)
+            buttonBox.add(stopButton)
 
             bigBox.add(timeBox)
             bigBox.add(Box.createVerticalStrut(50))
