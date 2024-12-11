@@ -103,7 +103,7 @@ class MobTimerModel {
         this.popupPaused = true
     }
 
-    fun resume() {
+    fun popupResume() {
         this.popupPaused = false
     }
 }

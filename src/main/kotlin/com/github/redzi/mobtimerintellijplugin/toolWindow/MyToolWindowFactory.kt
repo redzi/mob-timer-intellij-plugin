@@ -25,6 +25,7 @@ private const val PAUSE = "Pause"
 private const val SKIP = "Skip"
 private const val START = "Start"
 private const val STOP = "Stop"
+private const val REMOVE = "Remove"
 
 
 // Tomek
@@ -50,11 +51,11 @@ class MyToolWindowFactory : ToolWindowFactory {
         val timeHelpLabel = JBLabel("Turn time: ")
         val breakHelpLabel = JBLabel("Break time: ")
         val sessionBreakHelpLabel = JBLabel("Session break time: ")
-        val numberOfTurnsLabel = JBLabel("Turn: 1")
         val timeInput = JTextField("00:03")
         val breakInput = JTextField("00:03")
         val sessionBreakInput = JTextField("00:10")
-        val timeLabel = JBLabel(timeInput.getText())
+        val timeLabel = JBLabel("Time: ")
+        val remainingTimeLabel = JBLabel(timeInput.getText())
         val startButton = JButton(START)
         var pauseButton = JButton(PAUSE)
         var stopButton = JButton(STOP)
@@ -62,19 +63,18 @@ class MyToolWindowFactory : ToolWindowFactory {
         var popupPauseButton = JButton(PAUSE)
         var popupSkipButton = JButton(SKIP)
         var bigBox = Box.createVerticalBox()
-        var buttonBox = Box.createVerticalBox()
         var list = DefaultListModel<String>()
         var participantsList = JBList<String>()
         var addParticipantLabel = JBLabel("Name: ")
         var addParticipantInput = JBTextField()
         val addParticipantButton = JButton("Add")
+        var removeParticipantButton = JButton(REMOVE)
         var breakCountdownLabel = JBLabel("00:03")
         lateinit var popup : JBPopup
 
         private fun updateUi(model: MobTimerModel) {
-            numberOfTurnsLabel.text = "Turn: " + model.currentTurn
             participantsList.setSelectedIndex((model.currentTurn - 1) % model.numberOfTurns)
-            timeLabel.text = model.getDisplayTime()
+            remainingTimeLabel.text = model.getDisplayTime()
             if (model.popup) {
                 if (model.breakCountdown == 0) {
                     popup.cancel()
@@ -146,9 +146,13 @@ class MyToolWindowFactory : ToolWindowFactory {
                 addActionListener {
                     service.model.setTimeInput(timeInput.getText(), breakInput.getText(), sessionBreakInput.getText())
                     service.model.numberOfTurns = list.size()
+                    service.model.currentTurn = 1
                     service.model.start()
                     startButton.isEnabled = false
                     pauseButton.isEnabled = true
+                    addParticipantButton.isEnabled = false
+                    removeParticipantButton.isEnabled  = false
+                    service.model.popupResume()
                 }
             }
 
@@ -171,6 +175,9 @@ class MyToolWindowFactory : ToolWindowFactory {
                     startButton.isEnabled = true
                     pauseButton.text = PAUSE
                     pauseButton.isEnabled = false
+                    addParticipantButton.isEnabled = true
+                    removeParticipantButton.isEnabled  = true
+                    service.model.popupPause()
                     service.model.pause()
                 }
             }
@@ -190,7 +197,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                         service.model.popupPause()
                     } else {
                         popupPauseButton.text = PAUSE
-                        service.model.resume()
+                        service.model.popupResume()
                     }
                 }
             }
@@ -203,10 +210,16 @@ class MyToolWindowFactory : ToolWindowFactory {
                 }
             }
 
-
             addParticipantButton.apply {
                 addActionListener {
                     list.addElement(addParticipantInput.text)
+                    addParticipantInput.text = ""
+                }
+            }
+
+            removeParticipantButton.apply {
+                addActionListener {
+                    list.removeElement(addParticipantInput.text)
                     addParticipantInput.text = ""
                 }
             }
@@ -219,23 +232,26 @@ class MyToolWindowFactory : ToolWindowFactory {
             timeBox.add(sessionBreakHelpLabel)
             timeBox.add(sessionBreakInput)
 
-
-            buttonBox.add(numberOfTurnsLabel)
-            buttonBox.add(timeLabel)
-            buttonBox.add(breakCountdownLabel)
+            var remainingTimeBox = Box.createHorizontalBox()
+            remainingTimeBox.add(timeLabel)
+            remainingTimeBox.add(remainingTimeLabel)
+            var buttonBox = Box.createHorizontalBox()
             buttonBox.add(startButton)
             buttonBox.add(pauseButton)
             buttonBox.add(stopButton)
 
             bigBox.add(timeBox)
             bigBox.add(Box.createVerticalStrut(50))
+            bigBox.add(remainingTimeBox)
             bigBox.add(buttonBox)
 
             var addParticipantBox = Box.createHorizontalBox()
             addParticipantBox.add(addParticipantLabel)
             addParticipantBox.add(addParticipantInput)
             addParticipantBox.add(addParticipantButton)
+            addParticipantBox.add(removeParticipantButton)
             bigBox.add(addParticipantBox)
+            bigBox.add(Box.createVerticalStrut(30))
             bigBox.add(participantsList)
 
             add(bigBox)
