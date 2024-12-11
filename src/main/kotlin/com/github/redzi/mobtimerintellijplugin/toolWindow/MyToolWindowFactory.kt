@@ -119,7 +119,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                      popupBox.add(timeBox)
 
                      var popupButtonBox = Box.createHorizontalBox()
-                     popupButtonBox.add(popupStartButton)   // not the start button that we want
+                     popupButtonBox.add(popupStartButton)
                      popupButtonBox.add(popupPauseButton)
                      popupButtonBox.add(popupSkipButton)
 
