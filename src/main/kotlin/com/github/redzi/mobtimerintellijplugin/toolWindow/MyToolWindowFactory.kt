@@ -61,8 +61,6 @@ class MyToolWindowFactory : ToolWindowFactory {
         val popupStartButton = JButton(START_RIGHT_AWAY)
         var popupPauseButton = JButton(PAUSE)
         var popupSkipButton = JButton(SKIP)
-        val numberOfTurns2Label = JBLabel("Number of turns: ")
-        val numberOfTurnsInput = JTextField("4")
         var bigBox = Box.createVerticalBox()
         var buttonBox = Box.createVerticalBox()
         var list = DefaultListModel<String>()
@@ -146,16 +144,10 @@ class MyToolWindowFactory : ToolWindowFactory {
             startButton.apply {
                 addActionListener {
                     service.model.setTimeInput(timeInput.getText(), breakInput.getText(), sessionBreakInput.getText())
-                    service.model.numberOfTurns = numberOfTurnsInput.getText().toInt()
+                    service.model.numberOfTurns = list.size()
                     service.model.start()
                     startButton.isEnabled = false
                     pauseButton.isEnabled = true
-                }
-            }
-            popupStartButton.apply {
-                addActionListener {
-                    service.model.start()
-                    popup.cancel()
                 }
             }
 
@@ -172,6 +164,23 @@ class MyToolWindowFactory : ToolWindowFactory {
                     }
                 }
             }
+
+            stopButton.apply {
+                addActionListener {
+                    startButton.isEnabled = true
+                    pauseButton.text = PAUSE
+                    pauseButton.isEnabled = false
+                    service.model.pause()
+                }
+            }
+
+            popupStartButton.apply {
+                addActionListener {
+                    service.model.start()
+                    popup.cancel()
+                }
+            }
+
             popupPauseButton.apply {
                 addActionListener {
                     if (popupPauseButton.text == PAUSE) {
@@ -193,14 +202,6 @@ class MyToolWindowFactory : ToolWindowFactory {
                 }
             }
 
-            stopButton.apply {
-                addActionListener {
-                    startButton.isEnabled = true
-                    pauseButton.text = PAUSE
-                    pauseButton.isEnabled = false
-                    service.model.pause()
-                }
-            }
 
             addParticipantButton.apply {
                 addActionListener {
@@ -219,9 +220,6 @@ class MyToolWindowFactory : ToolWindowFactory {
             timeBox.add(sessionBreakHelpLabel)
             timeBox.add(sessionBreakInput)
 
-            var turnBox = Box.createHorizontalBox()
-            turnBox.add(numberOfTurns2Label)
-            turnBox.add(numberOfTurnsInput)
 
             buttonBox.add(numberOfTurnsLabel)
             buttonBox.add(timeLabel)
@@ -232,7 +230,6 @@ class MyToolWindowFactory : ToolWindowFactory {
 
             bigBox.add(timeBox)
             bigBox.add(Box.createVerticalStrut(50))
-            bigBox.add(turnBox)
             bigBox.add(buttonBox)
 
             bigBox.add(addParticipantInput)
