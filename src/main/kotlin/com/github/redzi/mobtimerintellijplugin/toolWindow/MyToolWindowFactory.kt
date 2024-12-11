@@ -65,6 +65,7 @@ class MyToolWindowFactory : ToolWindowFactory {
         var buttonBox = Box.createVerticalBox()
         var list = DefaultListModel<String>()
         var participantsList = JBList<String>()
+        var addParticipantLabel = JBLabel("Name: ")
         var addParticipantInput = JBTextField()
         val addParticipantButton = JButton("Add")
         var breakCountdownLabel = JBLabel("00:03")
@@ -210,8 +211,6 @@ class MyToolWindowFactory : ToolWindowFactory {
                 }
             }
 
-            // TODO: stop the sesson button
-
             var timeBox = Box.createHorizontalBox()
             timeBox.add(timeHelpLabel)
             timeBox.add(timeInput)
@@ -232,8 +231,11 @@ class MyToolWindowFactory : ToolWindowFactory {
             bigBox.add(Box.createVerticalStrut(50))
             bigBox.add(buttonBox)
 
-            bigBox.add(addParticipantInput)
-            bigBox.add(addParticipantButton)
+            var addParticipantBox = Box.createHorizontalBox()
+            addParticipantBox.add(addParticipantLabel)
+            addParticipantBox.add(addParticipantInput)
+            addParticipantBox.add(addParticipantButton)
+            bigBox.add(addParticipantBox)
             bigBox.add(participantsList)
 
             add(bigBox)
