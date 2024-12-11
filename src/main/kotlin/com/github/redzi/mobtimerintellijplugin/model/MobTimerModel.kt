@@ -7,39 +7,59 @@ class MobTimerModel {
     var breakTime: Int = 0
     var sessionBreakTime: Int = 0
     var currentTurn: Int = 1
-    var numberOfTurns: Int = 0
+    var numberOfTurns: Int = 1
     private var timeInput: Int = 0
 
     private var paused: Boolean = true
+    private var popupPaused: Boolean = false
     var popup: Boolean = false
 
     fun onTimer(time: Time) {
-        if (popup) {
-            --breakCountdown
-            if (breakCountdown < 0) {
-                // turn break
-                start()
-                breakCountdown = breakTime
+        if (!popupPaused) {
+            if (popup) {
+                --breakCountdown
+                if (breakCountdown < 0) {
+                    // turn break
+                    start()
+                    breakCountdown = breakTime
+                }
             }
         }
+
         if (!paused) {
             --countdown
             if (countdown < 0) {
-                currentTurn++
-                listeners.values.forEach {
-                    it.onStateChange(this)
-                    it.onTurnEnded(this)
-                }
-                if (currentTurn > numberOfTurns) {
-                    // session break
-                    currentTurn = 1
-                    breakCountdown = sessionBreakTime
-                }
+                nextTurn()
                 countdown = timeInput
             }
         }
 
         listeners.values.forEach { it.onStateChange(this) }
+    }
+
+    fun nextTurn() {
+        currentTurn++
+        listeners.values.forEach {
+            it.onStateChange(this)
+            it.onTurnEnded(this)
+        }
+        if (currentTurn > numberOfTurns) {
+            // session break
+            currentTurn = 1
+            breakCountdown = sessionBreakTime
+        }
+    }
+
+    fun skipTurn() {
+        currentTurn++
+        listeners.values.forEach {
+            it.onStateChange(this)
+        }
+        if (currentTurn > numberOfTurns) {
+            // session break
+            currentTurn = 1
+            breakCountdown = sessionBreakTime
+        }
     }
 
     private val listeners = HashMap<Any, Listener>()
@@ -63,7 +83,6 @@ class MobTimerModel {
         this.countdown = toSeconds(timeInput)
         this.breakTime = toSeconds(breakInput)
         this.sessionBreakTime = toSeconds(sessionBreakInput)
-        this.breakCountdown = this.breakTime
     }
 
     fun getDisplayTime(): String {
@@ -72,10 +91,19 @@ class MobTimerModel {
 
     fun start() {
         paused = false
+        breakCountdown = this.breakTime
         popup = false
     }
 
-    fun pauseAndStop() {
+    fun pause() {
         paused = true
+    }
+
+    fun popupPause() {
+        this.popupPaused = true
+    }
+
+    fun resume() {
+        this.popupPaused = false
     }
 }

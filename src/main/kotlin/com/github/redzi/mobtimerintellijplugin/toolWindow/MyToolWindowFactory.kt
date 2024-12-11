@@ -10,7 +10,6 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.content.ContentFactory
 import com.github.redzi.mobtimerintellijplugin.model.MobTimerModel
 import com.github.redzi.mobtimerintellijplugin.services.MyProjectService
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.popup.JBPopup
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.components.JBList
@@ -19,9 +18,7 @@ import java.util.*
 import javax.swing.Box
 import javax.swing.DefaultListModel
 import javax.swing.JButton
-import javax.swing.JComponent
 import javax.swing.JTextField
-import javax.swing.ListSelectionModel
 
 private const val START_RIGHT_AWAY = "Start Right Away"
 private const val PAUSE = "Pause"
@@ -30,9 +27,9 @@ private const val START = "Start"
 private const val STOP = "Stop"
 
 
-// Arif
-// Patrik
 // Tomek
+// Patrik
+// Arif
 
 class MyToolWindowFactory : ToolWindowFactory {
 
@@ -61,8 +58,11 @@ class MyToolWindowFactory : ToolWindowFactory {
         val startButton = JButton(START)
         var pauseButton = JButton(PAUSE)
         var stopButton = JButton(STOP)
+        val popupStartButton = JButton(START_RIGHT_AWAY)
+        var popupPauseButton = JButton(PAUSE)
+        var popupSkipButton = JButton(SKIP)
         val numberOfTurns2Label = JBLabel("Number of turns: ")
-        val numberOfTurnsInput = JTextField("2")
+        val numberOfTurnsInput = JTextField("4")
         var bigBox = Box.createVerticalBox()
         var buttonBox = Box.createVerticalBox()
         var list = DefaultListModel<String>()
@@ -85,7 +85,12 @@ class MyToolWindowFactory : ToolWindowFactory {
         }
 
         init {
+            list.addElement("Tomek")
+            list.addElement("Patrik")
+            list.addElement("Arif")
+            list.addElement("Jinha")
             participantsList = JBList(list)
+
 
              service.model.addListener(this, object : MobTimerModel.Listener {
                  override fun onStateChange(mobTimerModel: MobTimerModel) {
@@ -95,7 +100,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                  }
                  override fun onTurnEnded(mobTimerModel: MobTimerModel) {
                      service.model.popup = true
-                     service.model.pauseAndStop()
+                     service.model.pause()
                      val arr = ArrayList<String>()
                      arr.add(START_RIGHT_AWAY)
                      arr.add(PAUSE)
@@ -115,37 +120,21 @@ class MyToolWindowFactory : ToolWindowFactory {
                      popupBox.add(timeBox)
 
                      var popupButtonBox = Box.createHorizontalBox()
-                     popupButtonBox.add(startButton)   // not the start button that we want
-                     popupButtonBox.add(pauseButton)
+                     popupButtonBox.add(popupStartButton)   // not the start button that we want
+                     popupButtonBox.add(popupPauseButton)
+                     popupButtonBox.add(popupSkipButton)
 
                      popupBox.add(popupButtonBox)
-//                     popupButtonBox.add(pauseButton)
 
                      val componentPopup = JBPopupFactory.getInstance().createComponentPopupBuilder(popupBox, popupBox)
-                     val popupBuilder = JBPopupFactory.getInstance().createPopupChooserBuilder(arr)
-                             .setTitle("Next Turn")
-                             .setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
-                             .setCancelOnOtherWindowOpen(false)
-                             .setCancelOnClickOutside(false)
-                             .setCancelKeyEnabled(false)
-                             .setCancelOnWindowDeactivation(false)
-                             .setItemChosenCallback { value ->
-                                 service.model.popup = false
-                                 if (value == START_RIGHT_AWAY) {
-                                     service.model.start()
-                                 } else if (value == PAUSE) {
-                                     // pause the break, not the session
-                                 } else { // Skip
-//                                     currentTurn++
-                                 }
-                             }
 
                      popup = componentPopup.createPopup()
                      if (!popup.isVisible) {
                          if (popup.canShow()) {
                              popup.showInFocusCenter()
                          } else {
-                             popup = popupBuilder.createPopup()
+                             // TODO investigate if this is used
+                             popup = componentPopup.createPopup()
                              popup.showInFocusCenter()
                          }
                      }
@@ -163,6 +152,12 @@ class MyToolWindowFactory : ToolWindowFactory {
                     pauseButton.isEnabled = true
                 }
             }
+            popupStartButton.apply {
+                addActionListener {
+                    service.model.start()
+                    popup.cancel()
+                }
+            }
 
             pauseButton.isEnabled = false
             pauseButton.apply {
@@ -170,11 +165,31 @@ class MyToolWindowFactory : ToolWindowFactory {
                     if (pauseButton.text == PAUSE) {
                         // paused
                         pauseButton.text = "Resume"
-                        service.model.pauseAndStop()
+                        service.model.pause()
                     } else {
                         pauseButton.text = PAUSE
                         service.model.start()
                     }
+                }
+            }
+            popupPauseButton.apply {
+                addActionListener {
+                    if (popupPauseButton.text == PAUSE) {
+                        // paused
+                        popupPauseButton.text = "Resume"
+                        service.model.popupPause()
+                    } else {
+                        popupPauseButton.text = PAUSE
+                        service.model.resume()
+                    }
+                }
+            }
+
+            popupSkipButton.apply {
+                addActionListener {
+                    service.model.skipTurn()
+                    service.model.start()
+                    popup.cancel()
                 }
             }
 
@@ -183,7 +198,7 @@ class MyToolWindowFactory : ToolWindowFactory {
                     startButton.isEnabled = true
                     pauseButton.text = PAUSE
                     pauseButton.isEnabled = false
-                    service.model.pauseAndStop()
+                    service.model.pause()
                 }
             }
 
